@@ -9,7 +9,7 @@ import prueba.DetallePedidoPixel;
 public class Main {
 	
 	public static ArrayList<PosDetailPixel> listPosdetail = new ArrayList<PosDetailPixel>();
-	public static double Total = 0,NetTotal = 0,Tax1 = 0;
+	public static double GlobalTotal = 0,GlobalNetTotal = 0,GlobalTax1 = 0,GlobalEfecty = 0;
 	
 	public static String PriceLetter(int a){
 		String Prices[]={"PRICEMODE","PRICEA","PRICEB","PRICEC","PRICED","PRICEE","PRICEF","PRICEG","PRICEH","PRICEI","PRICEJ"};
@@ -226,6 +226,9 @@ public class Main {
 			
 			NetTotal = Math.round(NetTotal);
 			Tax1 = FinalTotal-NetTotal;
+			GlobalTotal = FinalTotal;
+			GlobalNetTotal = NetTotal;
+			GlobalTax1 = Tax1;
 			
 			PosHeader = con.prepareStatement(sqlPosHeader);
 			PosHeader.setInt(1, NumFactura);//TRANSACT
@@ -401,17 +404,15 @@ public class Main {
 	
 	public static void Invoice(Connection con,int Numfactura,int idEmployee,int MemCode) {
 		try {
-			int Invoice1 = 0,idCloseTran = 0;
-			String SqlStrInvoice = "Select DBA.StrInvoice(?,?,?,?)",SqlStrCloseTran = "Select DBA.StrCloseTran(?)";
+			int Invoice1 = 0;
+			String SqlStrInvoice = "Select DBA.StrInvoice(?,?,?,?)";
 			String SqlInvoice = "INSERT INTO DBA.MsgMgr(MsgNum,MsgTime,MsgType,MsgPrm,Data) VALUES (?,?,5,2002,?)";
-			String SqlCloseTrans = "INSERT INTO DBA.MsgMgr(MsgNum,MsgTime,MsgType,MsgPrm,Data) VALUES (?,?,8,0,?)";
-			String DeleteMsgNum = "DELETE FROM DBA.MsgMgr WHERE MsgNum = ?";
-			String StrInvoice = "",StrCloseTran = "";
+			String StrInvoice = "";
 			String Central = null;
 			Timestamp ts = new Timestamp(System.currentTimeMillis());
-			PreparedStatement Invoice = null,CloseTran = null,MsgMgr = null;
+			PreparedStatement Invoice = null,MsgMgr = null;
 			CallableStatement proc = null;
-			ResultSet rsInvoice = null,rsCloseTran = null;
+			ResultSet rsInvoice = null;
 			
 			Central = CentralZone(con);
 			
@@ -430,67 +431,27 @@ public class Main {
 			Invoice.close();
 			rsInvoice.close();
 			
-			//Insertando Factura
-			proc = con.prepareCall("{call DBA.GetNextAutoInc(?,?)}");
-			proc.registerOutParameter(1, Types.INTEGER);
-			proc.setString(2, "GetNext_MsgMgr");
-			proc.execute();
-			Invoice1 = proc.getInt(1);
-			proc.close();
-			
-			ts = new Timestamp(System.currentTimeMillis());
-			MsgMgr = con.prepareStatement(SqlInvoice);
-			MsgMgr.setInt(1, Invoice1);
-			MsgMgr.setTimestamp(2, ts);
-			MsgMgr.setString(3, StrInvoice);
-			
-			MsgMgr.execute();
-			MsgMgr.close();
-			
-			//String CloseTran
-			CloseTran = con.prepareStatement(SqlStrCloseTran);
-			CloseTran.setInt(1, Numfactura);
-			
-			rsCloseTran = Invoice.executeQuery();
-			rsCloseTran.next();
-			StrCloseTran = rsCloseTran.getString(1);
-			
-			System.out.println(StrCloseTran);
-			CloseTran.close();
-			rsCloseTran.close();
-			
-			//Insertando CloseTran
-			proc = con.prepareCall("{call DBA.GetNextAutoInc(?,?)}");
-			proc.registerOutParameter(1, Types.INTEGER);
-			proc.setString(2, "GetNext_MsgMgr");
-			proc.execute();
-			idCloseTran = proc.getInt(1);
-			proc.close();
-			
-			ts = new Timestamp(System.currentTimeMillis());
-			MsgMgr = con.prepareStatement(SqlCloseTrans);
-			MsgMgr.setInt(1, Numfactura);
-			MsgMgr.setTimestamp(2, ts);
-			MsgMgr.setString(3, StrCloseTran);
-			
-			MsgMgr.execute();
-			MsgMgr.close();
-			
-			//Eliminando Factura
-			MsgMgr = con.prepareStatement(DeleteMsgNum);
-			MsgMgr.setInt(1, Invoice1);
-			
-			MsgMgr.execute();
-			MsgMgr.close();
-			
-			//Eliminando CloseTran
-			MsgMgr = con.prepareStatement(DeleteMsgNum);
-			MsgMgr.setInt(1, idCloseTran);
-			
-			MsgMgr.execute();
-			MsgMgr.close();
+			for (int i = 0; i < 2; i++) {
+				//Insertando Factura
+				proc = con.prepareCall("{call DBA.GetNextAutoInc(?,?)}");
+				proc.registerOutParameter(1, Types.INTEGER);
+				proc.setString(2, "GetNext_MsgMgr");
+				proc.execute();
+				Invoice1 = proc.getInt(1);
+				proc.close();
+				
+				ts = new Timestamp(System.currentTimeMillis());
+				MsgMgr = con.prepareStatement(SqlInvoice);
+				MsgMgr.setInt(1, Invoice1);
+				MsgMgr.setTimestamp(2, ts);
+				MsgMgr.setString(3, StrInvoice);
+				
+				MsgMgr.execute();
+				MsgMgr.close();
+			}
 			
 		} catch (SQLException e) {
+			System.out.println(e.getMessage());
 			e.getMessage();
 		}
 	}
@@ -557,7 +518,17 @@ public class Main {
 			}
 		}
 		
+		Formatter.setMinimumFractionDigits(0);
 		CentralZone = CentralZone + FinalChain.toString();
+		CentralZone = CentralZone + "^L\r\n";
+		CentralZone = CentralZone + "            Neto Total:      $"+Formatter.format(GlobalNetTotal)+"\r\n";
+		CentralZone = CentralZone + "            INC 8%           $"+Formatter.format(GlobalTax1)+"\r\n";
+		CentralZone = CentralZone + "            ================="+"\r\n";
+		CentralZone = CentralZone + "            Sub-Total:       $"+Formatter.format(GlobalTotal)+"\r\n";
+		CentralZone = CentralZone + "            ================="+"\r\n\r\n";
+		CentralZone = CentralZone + "^C^W   TOTAL $"+Formatter.format(GlobalTotal)+"\r\n";
+		CentralZone = CentralZone + "            Cambio:          $"+Formatter.format(GlobalEfecty-GlobalTotal)+"\r\n\r\n";
+		CentralZone = CentralZone + "            Efectivo:        $"+Formatter.format(GlobalEfecty)+"\r\n";
 		CentralZone = CentralZone + "^L\r\n";
 		
 		return CentralZone;
@@ -568,7 +539,7 @@ public class Main {
 			//Class.forName("sybase.jdbc.sqlanywhere.IDriver");
 			//Connection con = DriverManager.getConnection("jdbc:sqlanywhere:dsn=PixelPC;uid=admin;pwd=xxx");//local
 			//Connection con = DriverManager.getConnection("jdbc:sqlanywhere:dsn=PixelSqlbase;uid=admin;pwd=xxx");//SystemPos
-			Connection con = DriverManager.getConnection("jdbc:sqlanywhere:dsn=pixelremote;uid=admin;pwd=xxx");//SystemPos
+			Connection con = DriverManager.getConnection("jdbc:sqlanywhere:dsn=Pixel;uid=admin;pwd=xxx");//SystemPos
 			
 			SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss.SSS");
 			Date parsedDate = dateFormat.parse("1899-12-30 00:00:00.000");
@@ -586,7 +557,7 @@ public class Main {
 			rs.next();
 			java.sql.Date DiaApertura = rs.getDate("OpenDate");
 			rs.close();
-			System.out.println("Día De Apertura: "+DiaApertura);
+			System.out.println("Dia De Apertura: "+DiaApertura);
 			
 			//Obteniendo el numero de factura
 			CallableStatement proc = con.prepareCall("{call DBA.GetNextAutoInc(?,?)}");
@@ -667,7 +638,7 @@ public class Main {
 			int MethodNum = 1001;
 			
 			//Cambio
-			double Change = 100000;
+			GlobalEfecty = 100000;
 			
 			//Llenado de ArrayList Pedido de prueba
 			ArrayList<DetallePedidoPixel> pruebaPedido = new ArrayList<DetallePedidoPixel>();
@@ -709,7 +680,7 @@ public class Main {
 			PosDetail(con,pruebaPedido,2007,NumFactura,DiaApertura);
 			
 			//Insertando nueva transacción en dba.PosHeader y en DBA.Howpaid
-			PosHeader(con,2007,NumFactura,MemCode,MethodNum,Change,Inicialts,DiaApertura);
+			PosHeader(con,2007,NumFactura,MemCode,MethodNum,GlobalEfecty,Inicialts,DiaApertura);
 			
 			//Insertando nueva transacción en dba.Tabinfo
 			ts = new Timestamp(System.currentTimeMillis());
