@@ -406,6 +406,7 @@ public class Main {
 		try {
 			int Invoice1 = 0;
 			String SqlStrInvoice = "Select DBA.StrInvoice(?,?,?,?)";
+			String SqlStrComanda = "Select DBA.Comanda(?,?,?,?)";
 			String SqlInvoice = "INSERT INTO DBA.MsgMgr(MsgNum,MsgTime,MsgType,MsgPrm,Data) VALUES (?,?,5,2002,?)";
 			String StrInvoice = "";
 			String Central = null;
@@ -418,7 +419,7 @@ public class Main {
 			Central = CentralZoneComanda(con);
 			
 			//String Invoice
-			Invoice = con.prepareStatement(SqlStrInvoice);
+			Invoice = con.prepareStatement(SqlStrComanda);
 			Invoice.setInt(1, Numfactura);
 			Invoice.setInt(2, idEmployee);
 			Invoice.setInt(3, MemCode);
