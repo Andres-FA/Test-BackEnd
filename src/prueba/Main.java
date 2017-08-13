@@ -534,6 +534,84 @@ public class Main {
 		return CentralZone;
 	}
 	
+	public static String CentralZoneComanda(Connection con){
+		int i=0,j=0;
+		double Quan = 0,Price=0;
+		String CentralZone = "",SqlCentral = "SELECT DESCRIPT FROM DBA.Product WHERE PRODNUM = ?";
+		String Specialty = "";
+		NumberFormat Formatter = NumberFormat.getInstance(Locale.ENGLISH);
+		StringBuilder StrPrice = null,StrQuan = null,TempChain = new StringBuilder(),FinalChain = new StringBuilder();
+		PreparedStatement Central = null;
+		ResultSet rsCentral = null;
+		
+		for (i=0 ; i < listPosdetail.size() ; i++) {
+			if (listPosdetail.get(i).getIdproductoext() != 0 & listPosdetail.get(i).getIdproductoext() != 2002) {
+				try {
+					Central = con.prepareStatement(SqlCentral);
+					Central.setInt(1, listPosdetail.get(i).getIdproductoext());
+					rsCentral = Central.executeQuery();
+					rsCentral.next();
+					Specialty = rsCentral.getString(1);
+					
+					if (listPosdetail.get(i).getOrigcostech() > 0) {
+						Price = Math.round(listPosdetail.get(i).getOrigcostech()*listPosdetail.get(i).getCantidad());
+						Quan = listPosdetail.get(i).getCantidad();
+						
+						Formatter.setMinimumFractionDigits(0);
+						StrPrice = new StringBuilder(Formatter.format(Price));
+						StrPrice.insert(0, "$ ");
+						
+						if ((Quan - Math.floor(Quan)) == 0) {
+							Formatter.setMinimumFractionDigits(0);
+						}else {
+							Formatter.setMinimumFractionDigits(2);
+						}
+						
+						StrQuan = new StringBuilder(Formatter.format(Quan));
+						
+						for (j = StrQuan.length(); j < 5; j++) {
+							StrQuan = StrQuan.insert(0, " ");
+						}
+						
+						if (Specialty.length() > 21) {
+							Specialty = Specialty.substring(0, 21); 
+						}
+						
+						TempChain = TempChain.append(StrQuan+" "+Specialty);
+						
+						for (j = TempChain.length(); j < (40 - StrPrice.length()); j++) {
+							TempChain.insert(j, " ");
+						}
+						
+						FinalChain.append(TempChain);
+						FinalChain.append(StrPrice + "\r\n");
+						TempChain = new StringBuilder();
+					}
+					Central.close();
+					rsCentral.close();
+				} catch (SQLException e) {
+					e.getMessage();
+				}
+			}
+		}
+		
+		Formatter.setMinimumFractionDigits(0);
+		CentralZone = CentralZone + FinalChain.toString();
+		CentralZone = CentralZone + "^L\r\n";
+		CentralZone = CentralZone + "            Neto Total:      $"+Formatter.format(GlobalNetTotal)+"\r\n";
+		CentralZone = CentralZone + "            INC 8%           $"+Formatter.format(GlobalTax1)+"\r\n";
+		CentralZone = CentralZone + "            ================="+"\r\n";
+		CentralZone = CentralZone + "            Sub-Total:       $"+Formatter.format(GlobalTotal)+"\r\n";
+		CentralZone = CentralZone + "            ================="+"\r\n\r\n";
+		CentralZone = CentralZone + "^C^W   TOTAL $"+Formatter.format(GlobalTotal)+"\r\n";
+		CentralZone = CentralZone + "            Cambio:          $"+Formatter.format(GlobalEfecty-GlobalTotal)+"\r\n\r\n";
+		CentralZone = CentralZone + "            Efectivo:        $"+Formatter.format(GlobalEfecty)+"\r\n";
+		CentralZone = CentralZone + "^L\r\n";
+		
+		return CentralZone;
+	}
+	
+	
 	public static void main(String[] args) {
 		try{
 			//Class.forName("sybase.jdbc.sqlanywhere.IDriver");
@@ -574,7 +652,7 @@ public class Main {
 //					String observacion, String tienda, int idtienda) 
 			
 			PreparedStatement Member = null;
-			Cliente MiembroEnviado = new Cliente(5,"0342548831", "juan","Botero","Bancolombia NIT 888999777-4", "CLL 10 #50-50", 
+			Cliente MiembroEnviado = new Cliente(5,"0342887766", "juan","Botero","Bancolombia NIT 888999777-4", "CLL 10 #50-50", 
 					"Medellin",0,0,0,"Zona","Torre Norte","",0);
 			String SqlInsertMember = "INSERT INTO DBA.Member(MEMCODE,FIRSTNAME,LASTNAME,ADRESS1,ADRESS2,CITY,PROV,STARTDATE,"
 					+"EXPDATE,ANNIVER,HOMETELE,LASTVISIT,MEMDIS,CARDNUM,GROUPNUM,ISACTIVE,Country,"
@@ -583,8 +661,8 @@ public class Main {
 			String SqlUpdateMember = "UPDATE DBA.Member SET FIRSTNAME=?,LASTNAME=?,ADRESS1=?,ADRESS2=?,CITY=?,"
 					+ "Directions=?,CompanyName=? WHERE MEMCODE=?";
 			
-			int MemCode = 0;
-			boolean indicadorAct = true;
+			int MemCode = 9881;
+			boolean indicadorAct = false;
 			//Si existe Memcode>0 y Bool = False **no hacer nada
 			//Si existe Memcode>0 y Bool = True **Actualizar
 			//No existe Memcode = 0 y ignora Bool **Crea
