@@ -414,6 +414,42 @@ public class Main {
 			CallableStatement proc = null;
 			ResultSet rsInvoice = null;
 			
+			//Imprimiendo comanda
+			Central = CentralZoneComanda(con);
+			
+			//String Invoice
+			Invoice = con.prepareStatement(SqlStrInvoice);
+			Invoice.setInt(1, Numfactura);
+			Invoice.setInt(2, idEmployee);
+			Invoice.setInt(3, MemCode);
+			Invoice.setString(4, Central);
+			
+			rsInvoice = Invoice.executeQuery();
+			rsInvoice.next();
+			StrInvoice = rsInvoice.getString(1);
+			
+			System.out.println(StrInvoice);
+			Invoice.close();
+			rsInvoice.close();
+			
+			//Insertando Comanda
+			proc = con.prepareCall("{call DBA.GetNextAutoInc(?,?)}");
+			proc.registerOutParameter(1, Types.INTEGER);
+			proc.setString(2, "GetNext_MsgMgr");
+			proc.execute();
+			Invoice1 = proc.getInt(1);
+			proc.close();
+			
+			ts = new Timestamp(System.currentTimeMillis());
+			MsgMgr = con.prepareStatement(SqlInvoice);
+			MsgMgr.setInt(1, Invoice1);
+			MsgMgr.setTimestamp(2, ts);
+			MsgMgr.setString(3, StrInvoice);
+			
+			MsgMgr.execute();
+			MsgMgr.close();
+			
+			//Imprimiendo Factura
 			Central = CentralZone(con);
 			
 			//String Invoice
@@ -536,8 +572,8 @@ public class Main {
 	
 	public static String CentralZoneComanda(Connection con){
 		int i=0,j=0;
-		double Quan = 0,Price=0;
-		String CentralZone = "",SqlCentral = "SELECT DESCRIPT FROM DBA.Product WHERE PRODNUM = ?";
+		double Quan = 0;
+		String CentralZoneComanda = "",SqlCentral = "SELECT DESCRIPT FROM DBA.Product WHERE PRODNUM = ?";
 		String Specialty = "";
 		NumberFormat Formatter = NumberFormat.getInstance(Locale.ENGLISH);
 		StringBuilder StrPrice = null,StrQuan = null,TempChain = new StringBuilder(),FinalChain = new StringBuilder();
@@ -554,12 +590,7 @@ public class Main {
 					Specialty = rsCentral.getString(1);
 					
 					if (listPosdetail.get(i).getOrigcostech() > 0) {
-						Price = Math.round(listPosdetail.get(i).getOrigcostech()*listPosdetail.get(i).getCantidad());
 						Quan = listPosdetail.get(i).getCantidad();
-						
-						Formatter.setMinimumFractionDigits(0);
-						StrPrice = new StringBuilder(Formatter.format(Price));
-						StrPrice.insert(0, "$ ");
 						
 						if ((Quan - Math.floor(Quan)) == 0) {
 							Formatter.setMinimumFractionDigits(0);
@@ -579,10 +610,6 @@ public class Main {
 						
 						TempChain = TempChain.append(StrQuan+" "+Specialty);
 						
-						for (j = TempChain.length(); j < (40 - StrPrice.length()); j++) {
-							TempChain.insert(j, " ");
-						}
-						
 						FinalChain.append(TempChain);
 						FinalChain.append(StrPrice + "\r\n");
 						TempChain = new StringBuilder();
@@ -596,19 +623,10 @@ public class Main {
 		}
 		
 		Formatter.setMinimumFractionDigits(0);
-		CentralZone = CentralZone + FinalChain.toString();
-		CentralZone = CentralZone + "^L\r\n";
-		CentralZone = CentralZone + "            Neto Total:      $"+Formatter.format(GlobalNetTotal)+"\r\n";
-		CentralZone = CentralZone + "            INC 8%           $"+Formatter.format(GlobalTax1)+"\r\n";
-		CentralZone = CentralZone + "            ================="+"\r\n";
-		CentralZone = CentralZone + "            Sub-Total:       $"+Formatter.format(GlobalTotal)+"\r\n";
-		CentralZone = CentralZone + "            ================="+"\r\n\r\n";
-		CentralZone = CentralZone + "^C^W   TOTAL $"+Formatter.format(GlobalTotal)+"\r\n";
-		CentralZone = CentralZone + "            Cambio:          $"+Formatter.format(GlobalEfecty-GlobalTotal)+"\r\n\r\n";
-		CentralZone = CentralZone + "            Efectivo:        $"+Formatter.format(GlobalEfecty)+"\r\n";
-		CentralZone = CentralZone + "^L\r\n";
+		CentralZoneComanda = CentralZoneComanda + FinalChain.toString();
+		CentralZoneComanda = CentralZoneComanda + "^L\r\n";
 		
-		return CentralZone;
+		return CentralZoneComanda;
 	}
 	
 	
