@@ -85,10 +85,10 @@ public class Main {
 						LineDes = "Dividir 1 de 2";
 						l++;
 					}else if (l == 1) {
-						LineDes = "Dividir 1 de 2";
+						LineDes = "Dividir 2 de 2";
 						l++;
 					}else if (l == 2) {
-						LineDes = "Fin de División";
+						LineDes = "Fin de Division";
 						l = 0;
 					}
 				}
@@ -622,13 +622,11 @@ public class Main {
 					FinalChain.append("^WDividir 1 de 2 \r\n");
 					j++;
 				}else if (j == 1) {
-					FinalChain.append("^WDividir 1 de 2 \r\n");
+					FinalChain.append("^WDividir 2 de 2 \r\n");
 					j++;
 				}else if (j == 2) {
 					FinalChain.append("^WFin Division \r\n");
-					j++;
-				}else {
-					j = 0 ;
+					j = 0;
 				}
 			}
 		}
