@@ -574,10 +574,10 @@ public class Main {
 	public static String CentralZoneComanda(Connection con){
 		int i=0,j=0;
 		double Quan = 0;
-		String CentralZoneComanda = "",SqlCentral = "SELECT DESCRIPT FROM DBA.Product WHERE PRODNUM = ?";
+		String CentralZoneComanda = "",SqlCentral = "SELECT PRINTDES FROM DBA.Product WHERE PRODNUM = ?";
 		String Specialty = "";
 		NumberFormat Formatter = NumberFormat.getInstance(Locale.ENGLISH);
-		StringBuilder StrPrice = null,StrQuan = null,TempChain = new StringBuilder(),FinalChain = new StringBuilder();
+		StringBuilder StrQuan = null,TempChain = new StringBuilder(),FinalChain = new StringBuilder();
 		PreparedStatement Central = null;
 		ResultSet rsCentral = null;
 		
@@ -590,36 +590,35 @@ public class Main {
 					rsCentral.next();
 					Specialty = rsCentral.getString(1);
 					
-					if (listPosdetail.get(i).getOrigcostech() > 0) {
-						Quan = listPosdetail.get(i).getCantidad();
-						
-						if ((Quan - Math.floor(Quan)) == 0) {
-							Formatter.setMinimumFractionDigits(0);
-						}else {
-							Formatter.setMinimumFractionDigits(2);
-						}
-						
-						StrQuan = new StringBuilder(Formatter.format(Quan));
-						
-						for (j = StrQuan.length(); j < 5; j++) {
-							StrQuan = StrQuan.insert(0, " ");
-						}
-						
-						if (Specialty.length() > 21) {
-							Specialty = Specialty.substring(0, 21); 
-						}
-						
-						TempChain = TempChain.append(StrQuan+" "+Specialty);
-						
-						FinalChain.append(TempChain);
-						FinalChain.append(StrPrice + "\r\n");
-						TempChain = new StringBuilder();
+					Quan = listPosdetail.get(i).getCantidad();
+					
+					if ((Quan - Math.floor(Quan)) == 0) {
+						Formatter.setMinimumFractionDigits(0);
+					}else {
+						Formatter.setMinimumFractionDigits(2);
 					}
+					
+					StrQuan = new StringBuilder(Formatter.format(Quan));
+															
+					if (Specialty.length() > 21) {
+						Specialty = Specialty.substring(0, 21); 
+					}
+					
+					TempChain = TempChain.append("^W"+StrQuan+" "+Specialty);
+					
+					FinalChain.append(TempChain);
+					FinalChain.append("\r\n");
+					TempChain = new StringBuilder();
+					
 					Central.close();
 					rsCentral.close();
 				} catch (SQLException e) {
 					e.getMessage();
 				}
+			}else if (listPosdetail.get(i).getIdproductoext() == 0) {
+				FinalChain.append("=======================================\r\n");
+			}else if (listPosdetail.get(i).getIdproductoext() == 2002) {
+				
 			}
 		}
 		
