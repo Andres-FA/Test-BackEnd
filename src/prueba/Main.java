@@ -618,7 +618,18 @@ public class Main {
 			}else if (listPosdetail.get(i).getIdproductoext() == 0) {
 				FinalChain.append("=======================================\r\n");
 			}else if (listPosdetail.get(i).getIdproductoext() == 2002) {
-				
+				if (j == 0) {
+					FinalChain.append("^WDividir 1 de 2 \r\n");
+					j++;
+				}else if (j == 1) {
+					FinalChain.append("^WDividir 1 de 2 \r\n");
+					j++;
+				}else if (j == 2) {
+					FinalChain.append("^WFin Division \r\n");
+					j++;
+				}else {
+					j = 0 ;
+				}
 			}
 		}
 		
