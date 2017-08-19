@@ -206,7 +206,7 @@ public class Main {
 					 +"VALUES(?,?,?,?,?,?,199,?,1,?,114,?,?,1,1,3,1,1,0,1,999,0,0)";
 			
 			//Obteniendo PunchIndex
-			PunchIndex = con.prepareStatement("SELECT a.PunchIndex FROM DBA.PUNCHCLOCK a WHERE  a.EmpNUM = 2007 AND a.OPENDATE = ?");
+			PunchIndex = con.prepareStatement("SELECT a.PunchIndex FROM DBA.PUNCHCLOCK a WHERE  a.EmpNUM = 777 AND a.OPENDATE = ?");
 			PunchIndex.setDate(1, OpenDate);
 			rs = PunchIndex.executeQuery();
 			rs.next();
@@ -782,10 +782,10 @@ public class Main {
 			pruebaPedido.add(new DetallePedidoPixel(0,0)); 
 			
 			//Preparando ArraList PosDetail
-			PosDetail(con,pruebaPedido,2007,NumFactura,DiaApertura);
+			PosDetail(con,pruebaPedido,777,NumFactura,DiaApertura);
 			
 			//Insertando nueva transacción en dba.PosHeader y en DBA.Howpaid
-			PosHeader(con,2007,NumFactura,MemCode,MethodNum,GlobalEfecty,Inicialts,DiaApertura);
+			PosHeader(con,777,NumFactura,MemCode,MethodNum,GlobalEfecty,Inicialts,DiaApertura);
 			
 			//Insertando nueva transacción en dba.Tabinfo
 			ts = new Timestamp(System.currentTimeMillis());
@@ -796,7 +796,7 @@ public class Main {
 			
 			PreparedStatement TabInfo = con.prepareStatement(SqlTabInfo);
 			TabInfo.setInt(1, NumFactura);
-			TabInfo.setInt(2, 2007);
+			TabInfo.setInt(2, 777);
 			TabInfo.setTimestamp(3, ts);
 			TabInfo.setInt(4, 30001);
 			TabInfo.setInt(5, 1);
@@ -860,7 +860,7 @@ public class Main {
 			RegisInMember.close();
 			
 			//Imprimiendo Facturas
-			 Invoice(con,NumFactura,2007,MemCode);
+			 Invoice(con,NumFactura,777,MemCode);
 			 		 
 			//Receta y Ajuste de Inventario
 			Recipe(con,pruebaPedido,NumFactura);
