@@ -28,7 +28,7 @@ public class Main {
 		try {
 			double Tax1 = 0, Quan=0, CostEach=0, OrigCostEach=0, NetCostEach=0;
 			int i=0,j=0,l=0;
-			int ApplyTax1 = 0,idPosDetail = 0 ,prodnum=0,recpos = 0,MasterItem = 0,QuestionId = -1, ProdType=0, StoreNum=0;
+			int ApplyTax1 = 0,idPosDetail = 0 ,prodnum=0,recpos = 0,MasterItem = 0,QuestionId = 0, ProdType=0, StoreNum=0;
 			Timestamp ts = new Timestamp(System.currentTimeMillis());
 			PreparedStatement Tax = null,StorenumAndPrice = null,NetandOrigCost = null;
 			CallableStatement AutoInc = null;
@@ -78,6 +78,8 @@ public class Main {
 					QuestionId = 0;
 				}else if (prodnum == 2002) {
 					QuestionId = MasterItem;
+				}else {
+					QuestionId = MasterItem;
 				}
 				
 				if(prodnum == 2002){
@@ -100,7 +102,7 @@ public class Main {
 					recpos++;				
 				}
 				
-				QuestionId = -1;
+				QuestionId = 0;
 				
 			}
 			
@@ -183,7 +185,7 @@ public class Main {
 				}
 			}						
 		} catch (SQLException e) {
-			e.getMessage();
+			System.out.println(e.getMessage());
 		}	
 	}
 	
@@ -275,7 +277,7 @@ public class Main {
 			Howpaid.close();
 			 
 		} catch (SQLException e) {
-			e.getMessage();			
+			System.out.println(e.getMessage());		
 		}
 	}
 
@@ -288,11 +290,24 @@ public class Main {
 					+"ReduceInventory,StoreNum,STATNUM,RecipeCostEach,OpenDate,"
 					+"MealTime,LineDes,REVCENTER,MasterItem,QuestionId,OrigCostEach,NetCostEach,UpdateStatus) "
 					+"VALUES (?,?,?,?,?,"
-					+"?,?,?,1,0,0,0,16,5000000,0,"
+					+"?,?,?,1,0,0,0,16,?,0,"
 					+"0,?,?,?,0,0,0,0,"
 					+"1,?,1,0,?,"
 					+"1,?,999,?,?,?,?,1)";
-			
+					Statement st = con.createStatement();
+					ResultSet rs = st.executeQuery("select max(a.status) as resul from dba.posdetail a\r\n" + 
+							"where a.OpenDate = dba.PixOpenDate() and \r\n" + 
+							"a.statnum = 1 and\r\n" + 
+							"a.PRODTYPE != 101 and\r\n" + 
+							"a.status  not in (5000000) ");
+					int status = 0; 
+					while (rs.next())
+					{
+						status =  rs.getInt("resul");
+						System.out.println(status);
+					}
+					status += 4;
+					
 			for(PosDetailPixel RunList: listPosdetail){
 				if (RunList.getIdproductoext() != 0) {
 					//Insertando en tabla PosDetail
@@ -305,25 +320,27 @@ public class Main {
 					AdPosDetail.setDouble(6, RunList.getCosteach());//COSTEACH
 					AdPosDetail.setDouble(7, RunList.getCantidad());//QUAN
 					AdPosDetail.setTimestamp(8, RunList.getTimeord());//TIMEORD
-					AdPosDetail.setInt(9, RunList.getRecpos());//RECPOS
-					AdPosDetail.setInt(10, RunList.getProdtype());//PRODTYPE
-					AdPosDetail.setInt(11, RunList.getApplytax1());//ApplyTax1
-					AdPosDetail.setInt(12, RunList.getStorenum());//StoreNum
-					AdPosDetail.setDate(13, RunList.getOpendate());//OpenDate
-					AdPosDetail.setString(14, RunList.getLinedes());//LineDes
-					AdPosDetail.setInt(15, RunList.getMasteritem());//MasterItem
-					AdPosDetail.setInt(16, RunList.getQuestionid());//QuestionId
-					AdPosDetail.setDouble(17, RunList.getOrigcostech());//OrigCostEach
-					AdPosDetail.setDouble(18, RunList.getNetcosteach());//NetCostEach
+					AdPosDetail.setInt(9, status);//TIMEORD
+					AdPosDetail.setInt(10, RunList.getRecpos());//RECPOS
+					AdPosDetail.setInt(11, RunList.getProdtype());//PRODTYPE
+					AdPosDetail.setInt(12, RunList.getApplytax1());//ApplyTax1
+					AdPosDetail.setInt(13, RunList.getStorenum());//StoreNum
+					AdPosDetail.setDate(14, RunList.getOpendate());//OpenDate
+					AdPosDetail.setString(15, RunList.getLinedes());//LineDes
+					AdPosDetail.setInt(16, RunList.getMasteritem());//MasterItem
+					AdPosDetail.setInt(17, RunList.getQuestionid());//QuestionId
+					AdPosDetail.setDouble(18, RunList.getOrigcostech());//OrigCostEach
+					AdPosDetail.setDouble(19, RunList.getNetcosteach());//NetCostEach
 					
 					AdPosDetail.execute();
 					AdPosDetail.close();
+					status += 4;
 				}
 			}
 			
 			
 		} catch (SQLException e) {
-			e.getMessage();
+			System.out.println(e.getMessage());
 		}
 	}
 	
@@ -398,11 +415,11 @@ public class Main {
 				Quan = 0;
 			}
 		} catch (SQLException e) {
-			e.getMessage();
+			System.out.println(e.getMessage());
 		}
 	}
 	
-	public static void Invoice(Connection con,int Numfactura,int idEmployee,int MemCode) {
+	public static void Invoice(Connection con,int Numfactura,int idEmployee,int MemCode,int MethodPay) {
 		try {
 			int Invoice1 = 0;
 			String SqlStrInvoice = "Select DBA.StrInvoice(?,?,?,?)";
@@ -451,7 +468,7 @@ public class Main {
 			MsgMgr.close();
 			
 			//Imprimiendo Factura
-			Central = CentralZone(con);
+			Central = CentralZone(con,MethodPay);
 			
 			//String Invoice
 			Invoice = con.prepareStatement(SqlStrInvoice);
@@ -489,19 +506,18 @@ public class Main {
 			
 		} catch (SQLException e) {
 			System.out.println(e.getMessage());
-			e.getMessage();
 		}
 	}
 
-	public static String CentralZone(Connection con){
+	public static String CentralZone(Connection con,int MethodPay){
 		int i=0,j=0,PrintZero=0;
 		double Quan = 0,Price=0;
 		String CentralZone = "",SqlCentral = "SELECT DESCRIPT,PrintZero FROM DBA.Product WHERE PRODNUM = ?";
-		String Specialty = "";
+		String Specialty = "",StrMethodPay = "",SqlMethodPay = "SELECT DESCRIPT FROM dba.MethodPay WHERE METHODNUM = ?";
 		NumberFormat Formatter = NumberFormat.getInstance(Locale.ENGLISH);
 		StringBuilder StrPrice = null,StrQuan = null,TempChain = new StringBuilder(),FinalChain = new StringBuilder();
-		PreparedStatement Central = null;
-		ResultSet rsCentral = null;
+		PreparedStatement Central = null, Pay = null;
+		ResultSet rsCentral = null, rsPay = null;
 		
 		for (i=0 ; i < listPosdetail.size() ; i++) {
 			if (listPosdetail.get(i).getIdproductoext() != 0 & listPosdetail.get(i).getIdproductoext() != 2002) {
@@ -550,9 +566,25 @@ public class Main {
 					Central.close();
 					rsCentral.close();
 				} catch (SQLException e) {
-					e.getMessage();
+					System.out.println(e.getMessage());
 				}
 			}
+		}
+		
+		try {
+			Pay = con.prepareStatement(SqlMethodPay);
+			Pay.setInt(1, MethodPay);
+			rsPay = Pay.executeQuery();
+			rsPay.next();
+			StrMethodPay = rsPay.getString(1);
+			Pay.close();
+			rsPay.close();
+		} catch (SQLException e) {
+			System.out.println(e.getMessage());
+		}
+		
+		if (MethodPay != 1001) {
+			StrMethodPay = "^W" + StrMethodPay;			
 		}
 		
 		Formatter.setMinimumFractionDigits(0);
@@ -565,7 +597,8 @@ public class Main {
 		CentralZone = CentralZone + "            ================="+"\r\n\r\n";
 		CentralZone = CentralZone + "^C^W   TOTAL $"+Formatter.format(GlobalTotal)+"\r\n";
 		CentralZone = CentralZone + "            Cambio:          $"+Formatter.format(GlobalEfecty-GlobalTotal)+"\r\n\r\n";
-		CentralZone = CentralZone + "            Efectivo:        $"+Formatter.format(GlobalEfecty)+"\r\n";
+		CentralZone = CentralZone + "^L\r\n";
+		CentralZone = CentralZone + StrMethodPay+" $"+Formatter.format(GlobalEfecty)+"\r\n";
 		CentralZone = CentralZone + "^L\r\n";
 		
 		return CentralZone;
@@ -613,7 +646,7 @@ public class Main {
 					Central.close();
 					rsCentral.close();
 				} catch (SQLException e) {
-					e.getMessage();
+					System.out.println(e.getMessage());
 				}
 			}else if (listPosdetail.get(i).getIdproductoext() == 0) {
 				FinalChain.append("=======================================\r\n");
@@ -688,7 +721,7 @@ public class Main {
 			String SqlUpdateMember = "UPDATE DBA.Member SET FIRSTNAME=?,LASTNAME=?,ADRESS1=?,ADRESS2=?,CITY=?,"
 					+ "Directions=?,CompanyName=? WHERE MEMCODE=?";
 			
-			int MemCode = 9881;
+			int MemCode = 40700;
 			boolean indicadorAct = false;
 			//Si existe Memcode>0 y Bool = False **no hacer nada
 			//Si existe Memcode>0 y Bool = True **Actualizar
@@ -747,31 +780,39 @@ public class Main {
 			
 			//Llenado de ArrayList Pedido de prueba
 			ArrayList<DetallePedidoPixel> pruebaPedido = new ArrayList<DetallePedidoPixel>();
-			pruebaPedido.add(new DetallePedidoPixel(2341,1));
+//			pruebaPedido.add(new DetallePedidoPixel(2341,1));
+//			pruebaPedido.add(new DetallePedidoPixel(2002,0.5));
+//			pruebaPedido.add(new DetallePedidoPixel(2024,0.5));
+//			pruebaPedido.add(new DetallePedidoPixel(2229,1));
+//			pruebaPedido.add(new DetallePedidoPixel(2273,1));
+//			pruebaPedido.add(new DetallePedidoPixel(2130,0.5));
+//			pruebaPedido.add(new DetallePedidoPixel(2126,0.5));
+//			pruebaPedido.add(new DetallePedidoPixel(2002,0.5));
+//			pruebaPedido.add(new DetallePedidoPixel(2022,0.5));
+//			pruebaPedido.add(new DetallePedidoPixel(2401,1));
+//			pruebaPedido.add(new DetallePedidoPixel(2249,1));
+//			pruebaPedido.add(new DetallePedidoPixel(2177,0.5));
+//			pruebaPedido.add(new DetallePedidoPixel(2002,0.5));
+//			pruebaPedido.add(new DetallePedidoPixel(2110,1));
+//			pruebaPedido.add(new DetallePedidoPixel(2421,1));
+//			pruebaPedido.add(new DetallePedidoPixel(0,0));
+//			pruebaPedido.add(new DetallePedidoPixel(2372,1));
+//			pruebaPedido.add(new DetallePedidoPixel(2374,2));
+//			pruebaPedido.add(new DetallePedidoPixel(0,0));
+//			pruebaPedido.add(new DetallePedidoPixel(2107,1));
+//			pruebaPedido.add(new DetallePedidoPixel(0,0));
+//			pruebaPedido.add(new DetallePedidoPixel(2389,1));
+//			pruebaPedido.add(new DetallePedidoPixel(2430,1));
+//			pruebaPedido.add(new DetallePedidoPixel(2116,1));
+//			pruebaPedido.add(new DetallePedidoPixel(0,0));
+			pruebaPedido.add(new DetallePedidoPixel(2003,1));
 			pruebaPedido.add(new DetallePedidoPixel(2002,0.5));
-			pruebaPedido.add(new DetallePedidoPixel(2024,0.5));
-			pruebaPedido.add(new DetallePedidoPixel(2229,1));
-			pruebaPedido.add(new DetallePedidoPixel(2273,1));
-			pruebaPedido.add(new DetallePedidoPixel(2130,0.5));
-			pruebaPedido.add(new DetallePedidoPixel(2126,0.5));
+			pruebaPedido.add(new DetallePedidoPixel(2067,0.5));
 			pruebaPedido.add(new DetallePedidoPixel(2002,0.5));
-			pruebaPedido.add(new DetallePedidoPixel(2022,0.5));
-			pruebaPedido.add(new DetallePedidoPixel(2401,1));
-			pruebaPedido.add(new DetallePedidoPixel(2249,1));
-			pruebaPedido.add(new DetallePedidoPixel(2177,0.5));
+			pruebaPedido.add(new DetallePedidoPixel(2061,0.5));
 			pruebaPedido.add(new DetallePedidoPixel(2002,0.5));
-			pruebaPedido.add(new DetallePedidoPixel(2110,1));
-			pruebaPedido.add(new DetallePedidoPixel(2421,1));
-			pruebaPedido.add(new DetallePedidoPixel(0,0));
-			pruebaPedido.add(new DetallePedidoPixel(2372,1));
-			pruebaPedido.add(new DetallePedidoPixel(2374,2));
-			pruebaPedido.add(new DetallePedidoPixel(0,0));
-			pruebaPedido.add(new DetallePedidoPixel(2107,1));
-			pruebaPedido.add(new DetallePedidoPixel(0,0));
-			pruebaPedido.add(new DetallePedidoPixel(2389,1));
-			pruebaPedido.add(new DetallePedidoPixel(2430,1));
 			pruebaPedido.add(new DetallePedidoPixel(2116,1));
-			pruebaPedido.add(new DetallePedidoPixel(0,0));
+			pruebaPedido.add(new DetallePedidoPixel(0,0)); 
 			pruebaPedido.add(new DetallePedidoPixel(2003,1));
 			pruebaPedido.add(new DetallePedidoPixel(2002,0.5));
 			pruebaPedido.add(new DetallePedidoPixel(2067,0.5));
@@ -823,7 +864,7 @@ public class Main {
 			PosHDelivery.execute();
 			PosHDelivery.close();
 			
-			//Insertando nueva transacción en DBA.POSDETAIL
+			//Insertando nueva transaccion en DBA.POSDETAIL
 			RunPosDetail(con);
 			
 			//Borrando registro en dba.Tabinfo
@@ -860,7 +901,7 @@ public class Main {
 			RegisInMember.close();
 			
 			//Imprimiendo Facturas
-			 Invoice(con,NumFactura,777,MemCode);
+			 Invoice(con,NumFactura,777,MemCode,MethodNum);
 			 		 
 			//Receta y Ajuste de Inventario
 			Recipe(con,pruebaPedido,NumFactura);
@@ -873,7 +914,7 @@ public class Main {
 			con.close();
 			
 		}catch(Exception e){
-			 System.out.println("Tuvimos un fallo " + e.getMessage());
+			System.out.println(e.getMessage());
 		}
 	}
 
