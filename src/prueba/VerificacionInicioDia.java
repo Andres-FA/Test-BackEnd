@@ -31,6 +31,9 @@ public class VerificacionInicioDia {
 			
 			Timestamp Inicialts2 = new java.sql.Timestamp(DiaApertura.getTime());
 			System.out.println("Dia De Apertura como Timestamp: "+Inicialts2);
+			System.out.println();
+			System.out.println("----Empecemos-----");
+			System.out.println();
 			
 			if (DiaApertura.equals(Inicialts)) {
 				System.out.println("No se ha iniciado el dia en el sistema");
